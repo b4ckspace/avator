@@ -1,0 +1,33 @@
+kind: pipeline
+name: default
+
+steps:
+  - name: build
+    image: golang:alpine
+    environment:
+      CGO_ENABLED: "0"
+    commands:
+      - apk add --no-cache git
+      - go mod tidy
+      - go test
+      - go build -o avator-linux-amd64
+
+  - name: dockerize
+    image: plugins/docker
+    settings:
+      autotag: true
+
+  - name: release
+    image: plugins/github-release
+    settings:
+      api_key:
+        from_secret: github_token
+      files:
+        - avator-linux-amd64
+      checksum:
+        - md5
+        - sha1
+        - sha256
+    when:
+      event: tag
+
